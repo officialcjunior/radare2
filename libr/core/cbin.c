@@ -4341,19 +4341,39 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, int mode) {
 	case 'j':
 		// XXX there's only one binobj for each bf...so we should change that json
 		// TODO: use pj API
-		r_cons_printf ("{\"name\":\"%s\",\"iofd\":%d,\"bfid\":%d,\"size\":%d,\"objs\":[",
-			name? name: "", bf->fd, bf->id, bin_sz);
 		{
+			PJ * pj = pj_new ();
+			pj_a (pj);
+			pj_o (pj);
+
+			pj_ks (pj, "name", name);
+			pj_ki (pj, "iofd", bf->fd);
+			pj_ki (pj, "bfid", bf->id);
+			pj_ki (pj, "size", bf->id);
+			pj_ki (pj, "objs", bin_sz);
+			/* r_cons_printf  ("{\"name\":\"%s\",\"iofd\":%d,\"bfid\":%d,\"size\":%d,\"objs\":[",
+			name? name: "", bf->fd, bf->id, bin_sz); */
 			RBinObject *obj = bf->o;
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
 			const char *asmarch = r_config_get (core->config, "asm.arch");
 			const char *arch = info ? info->arch ? info->arch: asmarch : "unknown";
-			r_cons_printf ("{\"arch\":\"%s\",\"bits\":%d,\"binoffset\":%"
+			
+			pj_ks (pj, "arch", arch);
+			pj_ki (pj, "bits", bits);
+			pj_ki (pj, "binoffset", obj->boffset);
+			pj_ki (pj, "objsize", obj->obj_size);
+
+			pj_end (pj);
+			pj_end (pj);
+			char *j = pj_drain (pj);
+			r_cons_println (j);
+			free (j);
+			/* r_cons_printf ("{\"arch\":\"%s\",\"bits\":%d,\"binoffset\":%"
 					PFMT64d",\"objsize\":%"PFMT64d"}",
-					arch, bits, obj->boffset, obj->obj_size);
+					arch, bits, obj->boffset, obj->obj_size); */
 		}
-		r_cons_print ("]}");
+		//r_cons_print ("]}");
 		break;
 	default:
 		{
